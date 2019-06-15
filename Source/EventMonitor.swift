@@ -146,10 +146,10 @@ public protocol EventMonitor {
                  withResult result: Request.ValidationResult)
 
     /// Event called when a `DataRequest` creates a `DataResponse<Data?>` value without calling a `ResponseSerializer`.
-    func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?>)
+    func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, Error>)
 
     /// Event called when a `DataRequest` calls a `ResponseSerializer` and creates a generic `DataResponse<Value>`.
-    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value>)
+    func request<Success, Failure: Error>(_ request: DataRequest, didParseResponse response: DataResponse<Success, Failure>)
 
     // MARK: UploadRequest Events
 
@@ -166,7 +166,7 @@ public protocol EventMonitor {
     // MARK: DownloadRequest Events
 
     /// Event called when a `DownloadRequest`'s `URLSessionDownloadTask` finishes and the temporary file has been moved.
-    func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL>)
+    func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL, Error>)
 
     /// Event called when a `DownloadRequest`'s `Destination` closure is called and creates the destination URL the
     /// downloaded file will be moved to.
@@ -180,10 +180,10 @@ public protocol EventMonitor {
                  withResult result: Request.ValidationResult)
 
     /// Event called when a `DownloadRequest` creates a `DownloadResponse<URL?>` without calling a `ResponseSerializer`.
-    func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?>)
+    func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?, Error>)
 
     /// Event called when a `DownloadRequest` calls a `DownloadResponseSerializer` and creates a generic `DownloadResponse<Value>`
-    func request<Value>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Value>)
+    func request<Success, Failure: Error>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Success, Failure>)
 }
 
 extension EventMonitor {
@@ -249,20 +249,20 @@ extension EventMonitor {
                         response: HTTPURLResponse,
                         data: Data?,
                         withResult result: Request.ValidationResult) { }
-    public func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?>) { }
-    public func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value>) { }
+    public func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, Error>) { }
+    public func request<Success, Failure: Error>(_ request: DataRequest, didParseResponse response: DataResponse<Success, Failure>) { }
     public func request(_ request: UploadRequest, didCreateUploadable uploadable: UploadRequest.Uploadable) { }
     public func request(_ request: UploadRequest, didFailToCreateUploadableWithError error: Error) { }
     public func request(_ request: UploadRequest, didProvideInputStream stream: InputStream) { }
-    public func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL>) { }
+    public func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL, Error>) { }
     public func request(_ request: DownloadRequest, didCreateDestinationURL url: URL) { }
     public func request(_ request: DownloadRequest,
                         didValidateRequest urlRequest: URLRequest?,
                         response: HTTPURLResponse,
                         fileURL: URL?,
                         withResult result: Request.ValidationResult) { }
-    public func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?>) { }
-    public func request<Value>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Value>) { }
+    public func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?, Error>) { }
+    public func request<Success, Failure: Error>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Success, Failure>) { }
 }
 
 /// An `EventMonitor` which can contain multiple `EventMonitor`s and calls their methods on their queues.
@@ -445,11 +445,11 @@ public final class CompositeEventMonitor: EventMonitor {
         }
     }
 
-    public func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?>) {
+    public func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, Error>) {
         performEvent { $0.request(request, didParseResponse: response) }
     }
 
-    public func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value>) {
+    public func request<Success, Failure: Error>(_ request: DataRequest, didParseResponse response: DataResponse<Success, Failure>) {
         performEvent { $0.request(request, didParseResponse: response) }
     }
 
@@ -465,7 +465,7 @@ public final class CompositeEventMonitor: EventMonitor {
         performEvent { $0.request(request, didProvideInputStream: stream) }
     }
 
-    public func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL>) {
+    public func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL, Error>) {
         performEvent { $0.request(request, didFinishDownloadingUsing: task, with: result) }
     }
 
@@ -485,11 +485,11 @@ public final class CompositeEventMonitor: EventMonitor {
                                   withResult: result) }
     }
 
-    public func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?>) {
+    public func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?, Error>) {
         performEvent { $0.request(request, didParseResponse: response) }
     }
 
-    public func request<Value>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Value>) {
+    public func request<Success, Failure: Error>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Success, Failure>) {
         performEvent { $0.request(request, didParseResponse: response) }
     }
 }
@@ -581,10 +581,10 @@ open class ClosureEventMonitor: EventMonitor {
     open var requestDidValidateRequestResponseDataWithResult: ((DataRequest, URLRequest?, HTTPURLResponse, Data?, Request.ValidationResult) -> Void)?
 
     /// Closure called on the `request(_:didParseResponse:)` event.
-    open var requestDidParseResponse: ((DataRequest, DataResponse<Data?>) -> Void)?
+    open var requestDidParseResponse: ((DataRequest, DataResponse<Data?, Error>) -> Void)?
 
     /// Closure called on the `request(_:didParseResponse` event, casting the generic serialized object to `Any`.
-    open var requestDidParseAnyResponse: ((DataRequest, DataResponse<Any>) -> Void)?
+    open var requestDidParseAnyResponse: ((DataRequest, DataResponse<Any, Error>) -> Void)?
 
     /// Closure called on the `request(_:didCreateUploadable:)` event.
     open var requestDidCreateUploadable: ((UploadRequest, UploadRequest.Uploadable) -> Void)?
@@ -596,7 +596,7 @@ open class ClosureEventMonitor: EventMonitor {
     open var requestDidProvideInputStream: ((UploadRequest, InputStream) -> Void)?
 
     /// Closure called on the `request(_:didFinishDownloadingUsing:with:)` event.
-    open var requestDidFinishDownloadingUsingTaskWithResult: ((DownloadRequest, URLSessionTask, Result<URL>) -> Void)?
+    open var requestDidFinishDownloadingUsingTaskWithResult: ((DownloadRequest, URLSessionTask, Result<URL, Error>) -> Void)?
 
     /// Closure called on the `request(_:didCreateDestinationURL:)` event.
     open var requestDidCreateDestinationURL: ((DownloadRequest, URL) -> Void)?
@@ -605,10 +605,10 @@ open class ClosureEventMonitor: EventMonitor {
     open var requestDidValidateRequestResponseFileURLWithResult: ((DownloadRequest, URLRequest?, HTTPURLResponse, URL?, Request.ValidationResult) -> Void)?
 
     /// Closure called on the `request(_:didParseResponse:)` event.
-    open var requestDidParseDownloadResponse: ((DownloadRequest, DownloadResponse<URL?>) -> Void)?
+    open var requestDidParseDownloadResponse: ((DownloadRequest, DownloadResponse<URL?, Error>) -> Void)?
 
     /// Closure called on the `request(_:didParseResponse:)` event, casting the generic serialized object to `Any`.
-    open var requestDidParseAnyDownloadResponse: ((DownloadRequest, DownloadResponse<Any>) -> Void)?
+    open var requestDidParseAnyDownloadResponse: ((DownloadRequest, DownloadResponse<Any, Error>) -> Void)?
 
     public let queue: DispatchQueue
 
@@ -744,13 +744,13 @@ open class ClosureEventMonitor: EventMonitor {
         requestDidValidateRequestResponseDataWithResult?(request, urlRequest, response, data, result)
     }
 
-    open func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?>) {
+    open func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, Error>) {
         requestDidParseResponse?(request, response)
     }
 
-    open func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value>) {
+    open func request<Success, Failure: Error>(_ request: DataRequest, didParseResponse response: DataResponse<Success, Failure>) {
         // TODO: Make all methods optional so this isn't required.
-        requestDidParseAnyResponse?(request, response as! DataResponse<Any>)
+        requestDidParseAnyResponse?(request, response as! DataResponse<Any, Error>)
     }
 
     open func request(_ request: UploadRequest, didCreateUploadable uploadable: UploadRequest.Uploadable) {
@@ -765,7 +765,7 @@ open class ClosureEventMonitor: EventMonitor {
         requestDidProvideInputStream?(request, stream)
     }
 
-    open func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL>) {
+    open func request(_ request: DownloadRequest, didFinishDownloadingUsing task: URLSessionTask, with result: Result<URL, Error>) {
         requestDidFinishDownloadingUsingTaskWithResult?(request, task, result)
     }
 
@@ -785,11 +785,11 @@ open class ClosureEventMonitor: EventMonitor {
                                                             result)
     }
 
-    open func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?>) {
+    open func request(_ request: DownloadRequest, didParseResponse response: DownloadResponse<URL?, Error>) {
         requestDidParseDownloadResponse?(request, response)
     }
 
-    open func request<Value>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Value>) {
-        requestDidParseAnyDownloadResponse?(request, response as! DownloadResponse<Any>)
+    open func request<Success, Failure: Error>(_ request: DownloadRequest, didParseResponse response: DownloadResponse<Success, Failure>) {
+        requestDidParseAnyDownloadResponse?(request, response as! DownloadResponse<Any, Error>)
     }
 }

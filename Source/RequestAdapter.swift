@@ -31,5 +31,5 @@ public protocol RequestAdapter {
     /// - Parameters:
     ///   - urlRequest: The `URLRequest` to adapt.
     ///   - completion: The completion handler that must be called when adaptation is complete.
-    func adapt(_ urlRequest: URLRequest, completion: @escaping (_ result: Result<URLRequest>) -> Void)
+    func adapt(_ urlRequest: URLRequest, completion: @escaping (_ result: Result<URLRequest, Error>) -> Void)
 }
