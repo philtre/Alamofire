@@ -45,7 +45,7 @@ class SessionDelegateTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "Request should redirect to \(redirectURLString)")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         manager.request(urlString)
@@ -73,7 +73,7 @@ class SessionDelegateTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "Request should redirect to \(redirectURLString)")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         manager.request(urlString)

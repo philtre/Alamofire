@@ -39,8 +39,8 @@ class SessionTestCase: BaseTestCase {
             self.throwsError = throwsError
         }
 
-        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest>) -> Void) {
-            let result: Result<URLRequest> = Result {
+        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest, Error>) -> Void) {
+            let result: Result<URLRequest, Error> = Result {
                 guard !throwsError else { throw AFError.invalidURL(url: "") }
 
                 var urlRequest = urlRequest
@@ -61,8 +61,8 @@ class SessionTestCase: BaseTestCase {
         var shouldApplyAuthorizationHeader = false
         var throwsErrorOnSecondAdapt = false
 
-        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest>) -> Void) {
-            let result: Result<URLRequest> = Result {
+        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest, Error>) -> Void) {
+            let result: Result<URLRequest, Error> = Result {
                 if throwsErrorOnSecondAdapt && adaptedCount == 1 {
                     throwsErrorOnSecondAdapt = false
                     throw AFError.invalidURL(url: "")
@@ -99,8 +99,8 @@ class SessionTestCase: BaseTestCase {
         var retryCount = 0
         var retryErrors: [Error] = []
 
-        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest>) -> Void) {
-            let result: Result<URLRequest> = Result {
+        func adapt(_ urlRequest: URLRequest, completion: @escaping (Result<URLRequest, Error>) -> Void) {
+            let result: Result<URLRequest, Error> = Result {
                 adaptedCount += 1
 
                 if adaptedCount == 1 { throw AFError.invalidURL(url: "") }
@@ -242,9 +242,9 @@ class SessionTestCase: BaseTestCase {
         let brotliExpectation = expectation(description: "brotli request should complete")
         let gzipExpectation = expectation(description: "gzip request should complete")
         let deflateExpectation = expectation(description: "deflate request should complete")
-        var brotliResponse: DataResponse<Any>?
-        var gzipResponse: DataResponse<Any>?
-        var deflateResponse: DataResponse<Any>?
+        var brotliResponse: DataResponse<Any, Error>?
+        var gzipResponse: DataResponse<Any, Error>?
+        var deflateResponse: DataResponse<Any, Error>?
 
         // When
         AF.request(brotliURL).responseJSON { (response) in
@@ -312,7 +312,7 @@ class SessionTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "\(url)")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         let request = manager.request(urlRequest)
@@ -343,7 +343,7 @@ class SessionTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "\(url)")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         let request = manager.request(urlRequest)
@@ -376,7 +376,7 @@ class SessionTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "\(url)")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         let request = manager.request(urlRequest)
@@ -448,7 +448,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session()
         let expectation = self.expectation(description: "Request should fail with error")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         sessionManager.request("https://httpbin.org/get/äëïöü").response { resp in
@@ -477,7 +477,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session()
         let expectation = self.expectation(description: "Download should fail with error")
 
-        var response: DownloadResponse<URL?>?
+        var response: DownloadResponse<URL?, Error>?
 
         // When
         sessionManager.download("https://httpbin.org/get/äëïöü").response { resp in
@@ -507,7 +507,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session()
         let expectation = self.expectation(description: "Upload should fail with error")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         sessionManager.upload(Data(), to: "https://httpbin.org/get/äëïöü").response { resp in
@@ -536,7 +536,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session()
         let expectation = self.expectation(description: "Upload should fail with error")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         sessionManager.upload(URL(fileURLWithPath: "/invalid"), to: "https://httpbin.org/get/äëïöü").response { resp in
@@ -565,7 +565,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session()
         let expectation = self.expectation(description: "Upload should fail with error")
 
-        var response: DataResponse<Data?>?
+        var response: DataResponse<Data?, Error>?
 
         // When
         sessionManager.upload(InputStream(data: Data()), to: "https://httpbin.org/get/äëïöü").response { resp in
@@ -713,7 +713,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually fail")
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         // When
         let request = sessionManager.request("https://httpbin.org/basic-auth/user/password")
@@ -743,7 +743,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually fail")
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         // When
         sessionManager.request("https://httpbin.org/basic-auth/user/password")
@@ -772,7 +772,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually fail")
-        var response: DownloadResponse<Any>?
+        var response: DownloadResponse<Any, Error>?
 
         let destination: DownloadRequest.Destination = { _, _ in
             let fileURL = self.testDirectoryURL.appendingPathComponent("test-output.json")
@@ -803,7 +803,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually fail")
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         let uploadData = Data("upload data".utf8)
 
@@ -832,7 +832,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually succeed")
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         // When
         let request = sessionManager.request("https://httpbin.org/basic-auth/user/password")
@@ -860,7 +860,7 @@ class SessionTestCase: BaseTestCase {
         let sessionManager = Session(adapter: handler, retrier: handler)
 
         let expectation = self.expectation(description: "request should eventually fail")
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         // When
         let request = sessionManager.request("https://httpbin.org/basic-auth/user/password")
@@ -939,7 +939,7 @@ class SessionManagerConfigurationHeadersTestCase: BaseTestCase {
 
         let expectation = self.expectation(description: "request should complete successfully")
 
-        var response: DataResponse<Any>?
+        var response: DataResponse<Any, Error>?
 
         // When
         manager.request("https://httpbin.org/headers")
